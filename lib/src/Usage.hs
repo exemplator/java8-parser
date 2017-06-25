@@ -1,13 +1,19 @@
-module Lib where
+module Java.Parser.Usagefinder where
 
 import           Data.List
 import           Data.List.Split
 import           Language.Java.Parser
 import           Language.Java.Syntax
+import           Lib
 
 data Import = StaticImp | NormalImp
 
--- | isOriginal checks if the package declaration contains the type we are looking for, or if the TypeDeclartation contains the 
+data SearchBehaviour = SearchBehaviour {
+    command       :: Command
+    , needsImport ::Bool
+    }
+
+-- | isOriginal checks if the package declaration contains the type we are looking for, or if the TypeDeclartation contains the
 -- type we are looking for. If either do, we are in the original file of the Type, unless this class extends the original class,
 -- which it might.
 isOrignal :: PackageDecl -> String -> TypeDecl -> String -> Bool
