@@ -7,15 +7,24 @@ import           Language.Java.Syntax
 
 data Import = StaticImp | NormalImp
 
--- TODO: Add return true if current class implements or extends the original class 
+-- | isOriginal checks if the package declaration contains the type we are looking for, or if the TypeDeclartation contains the 
+-- type we are looking for. If either do, we are in the original file of the Type, unless this class extends the original class,
+-- which it might.
 isOrignal :: PackageDecl -> String -> TypeDecl -> String -> Bool
 isOrignal pkgDecl pkg typeDecl cl = isOriginalPackage pkgDecl pkg && checkTypeDecl typeDecl cl
     where
         checkTypeDecl :: TypeDecl -> String -> Bool
-        checkTypeDecl (ClassTypeDecl classDecl) cl = False
+        checkTypeDecl (ClassTypeDecl (ClassDecl _ (Ident s) _ _ refTypes _)) cl
+            | s == cl = True
+            | otherwise = checkRefType refTypes cl
+        checkTypeDecl (ClassTypeDecl (EnumDecl _ (Ident s) refTypes _)) cl
+            | s == cl = True
+            | otherwise = checkRefType refTypes cl
         checkTypeDecl (InterfaceTypeDecl (InterfaceDecl _ _ (Ident s) _ refTypes _)) cl
             | s == cl = True
-            | otherwise = any (\refTyp -> compareType refTyp cl) refTypes
+            | otherwise = checkRefType refTypes cl
+        checkRefType :: [RefType] -> String -> Bool
+        checkRefType refTypes cl = any (`compareType` cl) refTypes
         compareType :: RefType -> String -> Bool -- TODO: Implement this method correctly
         compareType _ _ = True
 
