@@ -25,10 +25,6 @@ data Selection = Selection {
 getSelections :: Input -> Either String [Selection]
 getSelections input = undefined
 
-correctPackage :: String -> Command -> Bool
-correctPackage package command
-    | 
-
 
 parse :: String -> String
 parse input = toString (result input)
