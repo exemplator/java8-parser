@@ -52,6 +52,9 @@ isImported (ImportDecl static importName generic) package
 nameToString :: Name -> [String]
 nameToString (Name idents) = map (\(Ident x) -> x) idents
 
+identS :: Ident -> String
+identS (Ident x) = x
+
 splitPackage :: String -> [String]
 splitPackage = splitOn "."
 

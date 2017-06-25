@@ -1,8 +1,15 @@
 module Java.Parser.Lib
     ( parse
     , Command
+    , packageName
+    , className
+    , methodName
     , Position
+    , line
+    , column
     , Selection
+    , start
+    , end
     ) where
 
 import           Language.Java.Parser
