@@ -2,10 +2,10 @@ module Java.Parser.Typechecker where
 
 import           Data.List
 import           Data.List.Split
-import           Java.Usagefinder
+import           Java.Parser.Lib
+import           Java.Parser.Usagefinder
 import           Language.Java.Parser
 import           Language.Java.Syntax
-import           Lib
 
 
 checkType :: Type -> SearchBehaviour -> Bool
@@ -23,11 +23,11 @@ checkType (PrimType prim) behaviour = fromMaybe True map (checkPrim prim) toPrim
 checkType (RefType (ArrayType t)) behaviour = checkType t behaviour
 checkType (RefType (ClassRefType (ClassType t))) behaviour
     | null t = True
-    | otherwise = fromMaybe True (&&) <$> map (packageMatch) packageName command behaviour <*> map (classMatch) className command behaviour
+    | otherwise = fromMaybe True (&&) <$> map packageMatch packageName command behaviour <*> map classMatch className command behaviour
     where
         classMatch x = fst (last t) == x
-        packageMatch pkg = if needsImport behaviour then pkg == flattenedPackage else True
-        flattenedPackage = fold (++) map (fst) "" init t
+        packageMatch pkg = not (needsImport behaviour) || pkg == flattenedPackage
+        flattenedPackage = fold (++) map fst "" init t
 
 -- | this method maybe returns the primitive used for comparisons against occurences
 toPrimitive :: Command -> Maybe String

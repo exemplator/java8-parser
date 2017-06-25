@@ -2,9 +2,9 @@ module Java.Parser.Usagefinder where
 
 import           Data.List
 import           Data.List.Split
+import           Java.Parser.Lib
 import           Language.Java.Parser
 import           Language.Java.Syntax
-import           Lib
 
 data Import = StaticImp | NormalImp
 
