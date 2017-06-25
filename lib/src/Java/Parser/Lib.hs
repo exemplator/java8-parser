@@ -14,7 +14,7 @@ module Java.Parser.Lib
 
 import           Language.Java.Parser
 
-data Input = String Command
+data Input = Input String Command
 
 data Command = Command {
     packageName  :: Maybe String
