@@ -12,6 +12,10 @@ module Java.Parser.Lib
     , end
     ) where
 
+-- |
+-- provides a simple interface to use the Java parser
+--
+
 import           Language.Java.Parser
 
 data Input = Input String Command

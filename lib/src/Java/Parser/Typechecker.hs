@@ -1,11 +1,14 @@
-module Java.Parser.Typechecker where
+module Java.Parser.TypeChecker where
 
 import           Data.Char
 import           Data.Maybe
+import           Java.Parser.Internals
 import           Java.Parser.Lib
-import           Java.Parser.Usagefinder
 import           Language.Java.Syntax
 
+-- |
+-- provides functions used for checking all sorts of types
+--
 
 checkType :: Type -> SearchBehaviour -> Bool
 checkType (PrimType prim) behaviour = maybe True (checkPrim prim) (toPrimitive $ command behaviour)
@@ -22,7 +25,7 @@ checkType (PrimType prim) behaviour = maybe True (checkPrim prim) (toPrimitive $
 checkType (RefType (ArrayType t)) behaviour = checkType t behaviour
 checkType (RefType (ClassRefType (ClassType t))) behaviour
     | null t = True
-    | otherwise = fromMaybe True $ (&&) <$> fmap packageMatch (packageName com) <*> fmap classMatch (className com)
+    | otherwise = fromMaybe True $ combine (fmap packageMatch (packageName com)) (fmap classMatch (className com)) (&&)
     where
         classMatch x = identS ( fst $ last t) == x
         packageMatch pkg = not (needsImport behaviour) || pkg == flattenedPackage
@@ -61,4 +64,3 @@ correctBoxedPrimPackage com = maybe False ("java.lang" ==) (packageName com)
 
 canCheckType :: SearchBehaviour -> Bool
 canCheckType behaviour = let com = command behaviour in isJust (packageName com) || isJust (className com)
-
