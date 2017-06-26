@@ -20,15 +20,11 @@ isOrignal :: PackageDecl -> TypeDecl -> SearchBehaviour -> Bool
 isOrignal pkgDecl typeDcl behavior = fromMaybe True combine correctPackage correctType (&&)
     where
         checkTypeDecl :: TypeDecl -> String -> Bool
-        checkTypeDecl (ClassTypeDecl (ClassDecl _ (Ident s) _ _ refTypes _)) cl
-            | s == cl = True
-            | otherwise = checkRefType refTypes cl
-        checkTypeDecl (ClassTypeDecl (EnumDecl _ (Ident s) refTypes _)) cl
-            | s == cl = True
-            | otherwise = checkRefType refTypes cl
-        checkTypeDecl (InterfaceTypeDecl (InterfaceDecl _ _ (Ident s) _ refTypes _)) cl
-            | s == cl = True
-            | otherwise = checkRefType refTypes cl
+        checkTypeDecl (ClassTypeDecl (ClassDecl _ ident _ _ ref _)) = compareToString ident ref
+        checkTypeDecl (ClassTypeDecl (EnumDecl _ ident ref _)) = compareToString ident ref
+        checkTypeDecl (InterfaceTypeDecl (InterfaceDecl _ _ ident _ ref _)) = compareToString ident ref
+
+        compareToString (Ident s) refTypes cl = (s == cl) || checkRefType refTypes cl
         checkRefType :: [RefType] -> Bool
         checkRefType = any (`checkType` behavior)
         com = command behavior
