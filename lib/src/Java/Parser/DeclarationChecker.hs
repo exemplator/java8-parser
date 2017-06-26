@@ -45,3 +45,15 @@ isImported (ImportDecl static importName generic) package
         iName = nameToString importName
         splittedPackages = splitPackage package
         correctImport = if static then StaticImp else NormalImp
+
+nameToString :: Name -> [String]
+nameToString (Name idents) = map (\(Ident x) -> x) idents
+
+splitPackage :: String -> [String]
+splitPackage = splitOn "."
+
+-- | returns the name of the field, if it matches something we care about
+matchingFieldDecl :: FieldDecl -> SearchBehaviour -> Maybe String
+
+-- | returns the name of the field, if it matches something we care about
+matchingParamDecl :: FormalParam -> SearchBehaviour -> Maybe String

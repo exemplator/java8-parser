@@ -10,9 +10,3 @@ import           Language.Java.Syntax
 -- |
 -- the high level dfs-ast algorithm
 --
-
-nameToString :: Name -> [String]
-nameToString (Name idents) = map (\(Ident x) -> x) idents
-
-splitPackage :: String -> [String]
-splitPackage = splitOn "."
