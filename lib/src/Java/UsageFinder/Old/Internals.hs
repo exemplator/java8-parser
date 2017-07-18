@@ -1,4 +1,4 @@
-module Java.Parser.Internals where
+module Java.Parser.Old.Internals where
 
 import           Control.Applicative
 import           Java.Parser.Lib

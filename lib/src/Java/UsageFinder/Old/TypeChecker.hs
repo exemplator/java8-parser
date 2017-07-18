@@ -1,4 +1,4 @@
-module Java.Parser.TypeChecker where
+module Java.Parser.Old.TypeChecker where
 
 import           Data.Char
 import           Data.Maybe
@@ -9,7 +9,6 @@ import           Language.Java.Syntax
 -- |
 -- provides functions used for checking all sorts of types
 --
-
 checkType :: Type -> SearchBehaviour -> Bool
 checkType (PrimType prim) behaviour = maybe True (checkPrim prim) (toPrimitive $ command behaviour)
     where

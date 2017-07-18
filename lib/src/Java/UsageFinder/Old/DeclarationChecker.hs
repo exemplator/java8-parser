@@ -1,4 +1,4 @@
-module Java.Parser.DeclarationChecker where
+module Java.Parser.Old.DeclarationChecker where
 
 import           Data.List
 import           Data.List.Split

@@ -1,4 +1,4 @@
-name:                java-parser
+name:                java-usage-finder
 version:             0.1.0.0
 -- synopsis:
 -- description:
@@ -15,10 +15,11 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Java.Parser.Lib
+  exposed-modules:     Java.UsageFinder.Lib
   build-depends:       base >= 4.7 && < 5,
                        language-java,
-                       split >= 0.2.3.2
+                       parsec >= 3.0
+
   default-language:    Haskell2010
 
 test-suite java-parser-test

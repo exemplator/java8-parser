@@ -1,4 +1,4 @@
-module Java.Parser.UsageFinder where
+module Java.Parser.Old.UsageFinder where
 
 import           Data.List
 import           Data.List.Split

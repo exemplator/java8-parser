@@ -1,4 +1,4 @@
-module Java.Parser.Lib
+module Java.Parser.Old.Lib
     ( parse
     , Command
     , packageName
