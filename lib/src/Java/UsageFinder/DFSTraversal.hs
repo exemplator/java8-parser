@@ -1,5 +1,7 @@
 module Java.UsageFinder.DFSTraversal where
 
+import           Data.List                (delete)
+import           Data.Maybe               (fromMaybe)
 import           Java.UsageFinder.Lib
 import           Language.Java.Position
 import           Language.Java.Syntax
@@ -13,32 +15,34 @@ data Target = Target
     { targetType   :: TargetType
     , targetMethod :: Maybe TargetMethod
     }
- 
+
 data TypeSource = TypeSource
     { inPackageScope :: Bool
     , inClassScope   :: Bool
     }
 
-type SearchBehaviour = (Target, TypeSource)
+type SearchBehaviour = (TargetType, TypeSource)
 
 defaultTypeSource = TypeSource{inPackageScope=False, inClassScope=False}
 
-updatePkgScope bool tSource = TypeSource{inPackageScope=bool, inClassScope=inClassScope typeSource}
+updatePkgScope bool tSource = TypeSource{inPackageScope=bool, inClassScope=inClassScope tSource}
 updateClassScope bool tSource = TypeSource{inPackageScope=inPackageScope tSource, inClassScope=bool}
 
 
 data Result l = Stuff (ImportDecl l) | RImportDecl (ImportDecl l)
     deriving (Show, Eq)
 
-traverseAST :: Target -> CompilationUnit l -> [Result l]
-traverseAST = isImported
+instance Eq l => Ord (Result l) where
+    compare a b = compare (toInt a) (toInt b)
+        where
+            toInt Stuff{} = 1
+            toInt RImportDecl{} = 2
 
-
-traverseDeclarations :: TargetType -> CompilationUnit l -> [Result l]
-traverseDeclarations target (CompilationUnit l pkgDcl importDecls tDcl) = parseResults ++ results
+traverseAST :: TargetType -> CompilationUnit l -> [Result l]
+traverseAST target (CompilationUnit l pkgDcl importDecls tDcl) = parseResults ++ results
     where
         (tSource, results) = foldr checkImport (defaultTypeSource, []) importDecls
-        checkImport (typeSource, results) importDecl = if target == RelaxedType $ getType importDecl
+        checkImport importDecl (typeSource, results) = if comp target importDecl
             then (updateSource typeSource importDecl, RImportDecl importDecl:results)
             else (typeSource, results)
 
@@ -47,19 +51,19 @@ traverseDeclarations target (CompilationUnit l pkgDcl importDecls tDcl) = parseR
 
         isOriginalPackage = fromMaybe False (comp target <$> pkgDcl)
 
-        parseResults = tDcl >>= traverseTypeDecl isOriginalPackage tSource
+        parseResults = tDcl >>= traverseTypeDecl isOriginalPackage (target, tSource)
 
 traverseTypeDecl :: Bool -> SearchBehaviour -> TypeDecl l-> [Result l]
 traverseTypeDecl isOriginalPackage (target, typeSource) typeDecl = next
     where
         isOriginal = target == (RelaxedType . getType) typeDecl && isOriginalPackage
-        extendsImplements = (not . null) comp target <$> delete (getType typeDecl) collectTypes
+        extendsImplements = (not . null) (comp target <$> delete (getType typeDecl) (collectTypes typeDecl))
                             && inPackageScope typeSource
         updatedSeachBehaviour = updateClassScope (isOriginal || extendsImplements) typeSource
         next = traverseBody (target, updatedSeachBehaviour) typeDecl
 
 traverseBody :: SearchBehaviour -> TypeDecl l -> [Result l]
-traverseBody sb td = td >>= (traverseDecl sb . getBody)
+traverseBody sb td = getBody td >>= traverseDecl sb
 
 traverseDecl :: SearchBehaviour -> Decl l -> [Result l]
 traverseDecl sb (MemberDecl _ decl) = traverseMemberDecl sb decl
