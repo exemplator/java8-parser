@@ -3,6 +3,7 @@ module Java.UsageFinder.DFSTraversal where
 import           Java.UsageFinder.Lib
 import           Language.Java.Position
 import           Language.Java.Syntax
+import           Language.Java.Syntax.Lib
 
 type TargetType = RelaxedType
 type TargetMethod = String
@@ -12,7 +13,7 @@ data Target = Target
     { targetType   :: TargetType
     , targetMethod :: Maybe TargetMethod
     }
-
+ 
 data TypeSource = TypeSource
     { inPackageScope :: Bool
     , inClassScope   :: Bool
@@ -56,4 +57,7 @@ traverseTypeDecl isOriginalPackage (target, typeSource) typeDecl = next
         next = traverseBody (target, updatedSeachBehaviour) typeDecl
 
 traverseBody :: SearchBehaviour -> TypeDecl l-> [Result l]
-traverseBody = undefined
+traverseBody (target, typeSource) = (traverseDecl . getBody) =<<
+
+traverseDecl :: SearchBehaviour -> Decl l-> [Result l]
+traverseDecl ()
