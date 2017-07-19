@@ -58,11 +58,11 @@ traverseTypeDecl isOriginalPackage (target, typeSource) typeDecl = next
         updatedSeachBehaviour = updateClassScope (isOriginal || extendsImplements) typeSource
         next = traverseBody (target, updatedSeachBehaviour) typeDecl
 
-traverseBody :: SearchBehaviour -> TypeDecl l-> [Result l]
-traverseBody (target, typeSource) = (traverseDecl . getBody) =<<
+traverseBody :: SearchBehaviour -> TypeDecl l -> [Result l]
+traverseBody sb td = td >>= (traverseDecl sb . getBody)
 
-traverseDecl :: SearchBehaviour -> Decl l-> [Result l]
+traverseDecl :: SearchBehaviour -> Decl l -> [Result l]
 traverseDecl = undefined
 
-comp :: (HasType a) => RelaxedType -> HasType a -> Bool
+comp :: (HasType a) => RelaxedType -> a -> Bool
 comp rel hasT = rel == (RelaxedType . getType) hasT
