@@ -56,10 +56,11 @@ traverseAST target (CompilationUnit l pkgDcl importDecls tDcl) = parseResults ++
 traverseTypeDecl :: Bool -> SearchBehaviour -> TypeDecl l-> [Result l]
 traverseTypeDecl isOriginalPackage (target, typeSource) typeDecl = next
     where
-        isOriginal = target == (RelaxedType . getType) typeDecl && isOriginalPackage
-        extendsImplements = (not . null) (comp target <$> delete (getType typeDecl) (collectTypes typeDecl))
+        isOriginal = comp target typeDecl && isOriginalPackage
+        everyExtendImplement = delete (getType typeDecl) (collectTypes typeDecl)
+        doesExtendImplement = not $ null (map (comp target) everyExtendImplement)
                             && inPackageScope typeSource
-        updatedSeachBehaviour = updateClassScope (isOriginal || extendsImplements) typeSource
+        updatedSeachBehaviour = updateClassScope (isOriginal || doesExtendImplement) typeSource
         next = traverseBody (target, updatedSeachBehaviour) typeDecl
 
 traverseBody :: SearchBehaviour -> TypeDecl l -> [Result l]
@@ -72,9 +73,9 @@ traverseDecl sb (InitDecl _ static block) = undefined
 traverseMemberDecl :: SearchBehaviour -> MemberDecl l -> [Result l]
 traverseMemberDecl sb (FieldDecl _ _ t varDecls) = undefined
 traverseMemberDecl sb (MethodDecl _ _ _ t name params exT _ body) = undefined
-traverseMemberDecl sb (ConstructorDecl _ _ t [varDecls]) = undefined
-traverseMemberDecl sb (MemberClassDecl _ _ t [varDecls]) = undefined
-traverseMemberDecl sb (MemberInterfaceDecl _ _ t [varDecls]) = undefined
+traverseMemberDecl sb (ConstructorDecl _ _ t _ _ _ _) = undefined
+traverseMemberDecl sb (MemberClassDecl _ _ ) = undefined
+traverseMemberDecl sb (MemberInterfaceDecl _ _ ) = undefined
 
 comp :: (HasType a) => RelaxedType -> a -> Bool
-comp rel hasT = rel == (RelaxedType . getType) hasT
+comp rel = (rel ==) . RelaxedType . getType
