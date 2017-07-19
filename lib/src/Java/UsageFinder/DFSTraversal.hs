@@ -62,7 +62,15 @@ traverseBody :: SearchBehaviour -> TypeDecl l -> [Result l]
 traverseBody sb td = td >>= (traverseDecl sb . getBody)
 
 traverseDecl :: SearchBehaviour -> Decl l -> [Result l]
-traverseDecl = undefined
+traverseDecl sb (MemberDecl _ decl) = traverseMemberDecl sb decl
+traverseDecl sb (InitDecl _ static block) = undefined
+
+traverseMemberDecl :: SearchBehaviour -> MemberDecl l -> [Result l]
+traverseMemberDecl sb (FieldDecl _ _ t varDecls) = undefined
+traverseMemberDecl sb (MethodDecl _ _ _ t name params exT _ body) = undefined
+traverseMemberDecl sb (ConstructorDecl _ _ t [varDecls]) = undefined
+traverseMemberDecl sb (MemberClassDecl _ _ t [varDecls]) = undefined
+traverseMemberDecl sb (MemberInterfaceDecl _ _ t [varDecls]) = undefined
 
 comp :: (HasType a) => RelaxedType -> a -> Bool
 comp rel hasT = rel == (RelaxedType . getType) hasT
