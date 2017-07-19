@@ -57,9 +57,6 @@ traverseTypeDecl isOriginalPackage (target, typeSource) typeDecl = next
         updatedSeachBehaviour = updateClassScope (isOriginal || extendsImplements) typeSource
         next = traverseBody (target, updatedSeachBehaviour) typeDecl
 
-        getExtImpl InterfaceTypeDecl _ idecl = undefined
-        getExtImpl InterfaceTypeDecl _ idecl = undefined
-
 traverseBody :: SearchBehaviour -> TypeDecl l-> [Result l]
 traverseBody = undefined
 
