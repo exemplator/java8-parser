@@ -53,7 +53,7 @@ traverseTypeDecl :: Bool -> SearchBehaviour -> TypeDecl l-> [Result l]
 traverseTypeDecl isOriginalPackage (target, typeSource) typeDecl = next
     where
         isOriginal = target == (RelaxedType . getType) typeDecl && isOriginalPackage
-        extendsImplements = not $ null (comp target <$> delete (getType typeDecl) collectTypes)
+        extendsImplements = (not . null) comp target <$> delete (getType typeDecl) collectTypes
                             && inPackageScope typeSource
         updatedSeachBehaviour = updateClassScope (isOriginal || extendsImplements) typeSource
         next = traverseBody (target, updatedSeachBehaviour) typeDecl
