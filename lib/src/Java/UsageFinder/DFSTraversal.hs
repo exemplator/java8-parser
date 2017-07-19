@@ -45,19 +45,24 @@ traverseDeclarations target (CompilationUnit l pkgDcl importDecls tDcl) = parseR
         updateSource tSource (ImportDecl _ True _) = updateClassScope True tSource
         updateSource tSource (ImportDecl _ False _) = updatePkgScope True tSource
 
-        isOriginalPackage = fromMaybe False ((\pkg -> target == (RelaxedType . getType) pkg) <$> pkgDcl)
+        isOriginalPackage = fromMaybe False (comp target <$> pkgDcl)
 
         parseResults = tDcl >>= traverseTypeDecl isOriginalPackage tSource
 
 traverseTypeDecl :: Bool -> SearchBehaviour -> TypeDecl l-> [Result l]
 traverseTypeDecl isOriginalPackage (target, typeSource) typeDecl = next
     where
-        isOriginal = target == (RelaxedType . getType) typeDecl
-        updatedSeachBehaviour = updateClassScope True typeSource
+        isOriginal = target == (RelaxedType . getType) typeDecl && isOriginalPackage
+        extendsImplements = not $ null (comp target <$> delete (getType typeDecl) collectTypes)
+                            && inPackageScope typeSource
+        updatedSeachBehaviour = updateClassScope (isOriginal || extendsImplements) typeSource
         next = traverseBody (target, updatedSeachBehaviour) typeDecl
 
 traverseBody :: SearchBehaviour -> TypeDecl l-> [Result l]
 traverseBody (target, typeSource) = (traverseDecl . getBody) =<<
 
 traverseDecl :: SearchBehaviour -> Decl l-> [Result l]
-traverseDecl ()
+traverseDecl = undefined
+
+comp :: (HasType a) => RelaxedType -> HasType a -> Bool
+comp rel hasT = rel == (RelaxedType . getType) hasT
