@@ -3,13 +3,9 @@ module Java.UsageFinder.Lib
     , packageName
     , className
     , methodName
-    , Position
-    , line
-    , column
-    , Selection
-    , start
-    , end
     ) where
+
+import           Language.Java.Position
 
 -- |
 -- provides a simple interface to use the Java parser
@@ -23,15 +19,5 @@ data Command = Command {
     , methodName :: Maybe String
     } deriving (Show)
 
-data Position = Position {
-    line     :: Integer
-    , column :: Integer
-    } deriving (Show)
-
-data Selection = Selection {
-    start :: Position,
-    end   :: Position
-    } deriving (Show)
-
-getSelections :: Input -> Either String [Selection]
+getSelections :: Input -> Either String [Segment]
 getSelections input = undefined
