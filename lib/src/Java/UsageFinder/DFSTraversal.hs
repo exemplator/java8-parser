@@ -84,21 +84,14 @@ traverseMemberDecl (Target tType tMethod, TypeSource inPkgScp inClSkp) (Construc
     if inClSkp && isJust tMethod && name == fromJust tMethod
     then [RMemberDecl (ConstructorDecl info mod tp (Ident name) fp e body)] 
     else traverseConstructorBody (Target tType tMethod, TypeSource inPkgScp inClSkp) body
-traverseMemberDecl sb (MemberClassDecl info memClDecl) =
-
-traverseMemberDecl sb (MemberInterfaceDecl info memItDecl ) =
-   
+traverseMemberDecl sb (MemberClassDecl info memClDecl) = getBody memClDecl >>= traverseDecl sb
+traverseMemberDecl sb (MemberInterfaceDecl info memIterDecl ) = getBody memIterDecl >>= traverseDecl sb
 
 traverseConstructorBody :: SearchBehavior -> ConstructorBody l -> [Result l]
 traverseConstructorBody = undefined
 
 traverseMethodBody :: SearchBehavior -> MethodBody l -> [Result l]
 traverseMethodBody = undefined
-
-traverseClassDecl :: SearchBehavior -> ClassDecl l -> [Result l]
-
-traverseClassDecl :: SearchBehavior -> InterfaceDecl l -> [Result l]
-
 
 comp :: (HasType a) => RelaxedType -> a -> Bool
 comp rel = (rel ==) . RelaxedType . getType
