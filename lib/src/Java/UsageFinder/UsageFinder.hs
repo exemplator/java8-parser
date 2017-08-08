@@ -11,5 +11,5 @@ import           Java.UsageFinder.DFSTraversal
 -- the high level dfs-ast algorithm
 --
 
-findOccurances :: Command -> String -> Either String [Selection]
-findOccurances command code =  traverseAST command <$> parseCompilationUnit code
+-- findOccurances :: Command -> String -> Either String [Segment]
+-- findOccurances command code =  traverseAST command <$> parseCompilationUnit code

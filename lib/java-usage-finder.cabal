@@ -15,7 +15,10 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Java.UsageFinder.Lib
+  exposed-modules:     Java.UsageFinder.UsageFinder,
+                       Java.UsageFinder.DFSTraversal,
+                       Java.UsageFinder.Lib
+                      
   build-depends:       base >= 4.7 && < 5,
                        language-java,
                        parsec >= 3.0

@@ -47,7 +47,5 @@ parse input = toString (result input)
         toString _ = "error while parsing"
         result input = parser compilationUnit input
 
-
-
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"

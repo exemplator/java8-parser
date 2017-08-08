@@ -5,7 +5,7 @@ import           Data.Maybe               (fromMaybe)
 import           Java.UsageFinder.Lib
 import           Language.Java.Position
 import           Language.Java.Syntax
-import           Language.Java.Syntax.Lib
+import           Language.Java.Helper
 
 type TargetType = RelaxedType
 type TargetMethod = String
@@ -21,7 +21,7 @@ data TypeSource = TypeSource
     , inClassScope   :: Bool
     }
 
-type SearchBehaviour = (TargetType, TypeSource)
+type SearchBehavior = (TargetType, TypeSource)
 
 defaultTypeSource = TypeSource{inPackageScope=False, inClassScope=False}
 
@@ -53,24 +53,24 @@ traverseAST target (CompilationUnit l pkgDcl importDecls tDcl) = parseResults ++
 
         parseResults = tDcl >>= traverseTypeDecl isOriginalPackage (target, tSource)
 
-traverseTypeDecl :: Bool -> SearchBehaviour -> TypeDecl l-> [Result l]
+traverseTypeDecl :: Bool -> SearchBehavior -> TypeDecl l-> [Result l]
 traverseTypeDecl isOriginalPackage (target, typeSource) typeDecl = next
     where
         isOriginal = comp target typeDecl && isOriginalPackage
         everyExtendImplement = delete (getType typeDecl) (collectTypes typeDecl)
         doesExtendImplement = not $ null (map (comp target) everyExtendImplement)
                             && inPackageScope typeSource
-        updatedSeachBehaviour = updateClassScope (isOriginal || doesExtendImplement) typeSource
-        next = traverseBody (target, updatedSeachBehaviour) typeDecl
+        updatedSearchBehavior = updateClassScope (isOriginal || doesExtendImplement) typeSource
+        next = traverseBody (target, updatedSearchBehavior) typeDecl
 
-traverseBody :: SearchBehaviour -> TypeDecl l -> [Result l]
+traverseBody :: SearchBehavior -> TypeDecl l -> [Result l]
 traverseBody sb td = getBody td >>= traverseDecl sb
 
-traverseDecl :: SearchBehaviour -> Decl l -> [Result l]
+traverseDecl :: SearchBehavior -> Decl l -> [Result l]
 traverseDecl sb (MemberDecl _ decl) = traverseMemberDecl sb decl
 traverseDecl sb (InitDecl _ static block) = undefined
 
-traverseMemberDecl :: SearchBehaviour -> MemberDecl l -> [Result l]
+traverseMemberDecl :: SearchBehavior -> MemberDecl l -> [Result l]
 traverseMemberDecl sb (FieldDecl _ _ t varDecls) = undefined
 traverseMemberDecl sb (MethodDecl _ _ _ t name params exT _ body) = undefined
 traverseMemberDecl sb (ConstructorDecl _ _ t _ _ _ _) = undefined

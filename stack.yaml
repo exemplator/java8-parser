@@ -30,7 +30,7 @@ packages:
 - 'lib'
 - location:
     git: https://github.com/exemplator/java-parser.git
-    commit: 397ec19f7e09a26874096fa2838396e98d4b5c06
+    commit: 25f2647546be4778e5b0649afd9ad8cafa24ff63
     #git: https://github.com/vincenthz/language-java.git
     #commit: 7048f4dcde53f1ad3e0503c05b4ee55c329b9637
   extra-dep: true
