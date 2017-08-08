@@ -1,7 +1,7 @@
 module Java.UsageFinder.DFSTraversal where
 
 import           Data.List                (delete)
-import           Data.Maybe               (fromMaybe)
+import           Data.Maybe               (fromMaybe, isNothing, isJust, fromJust)
 import           Java.UsageFinder.Lib
 import           Language.Java.Position
 import           Language.Java.Syntax
@@ -9,6 +9,8 @@ import           Language.Java.Helper
 
 type TargetType = RelaxedType
 type TargetMethod = String
+type ResultType = RelaxedType
+type ResultValue = String
 type DeclarationCheck l = ([ImportDecl l], Bool)
 
 data Target = Target
@@ -17,51 +19,52 @@ data Target = Target
     }
 
 data TypeSource = TypeSource
-    { inPackageScope :: Bool
-    , inClassScope   :: Bool
+    { inPackageScope :: Bool    -- package is in scope, but class is not (i.e. NOT static imports)
+    , inClassScope   :: Bool    -- class is in scope (i.e. static imports or defined in this class)  
     }
 
-type SearchBehavior = (TargetType, TypeSource)
+type SearchBehavior = (Target, TypeSource)
 
 defaultTypeSource = TypeSource{inPackageScope=False, inClassScope=False}
 
 updatePkgScope bool tSource = TypeSource{inPackageScope=bool, inClassScope=inClassScope tSource}
 updateClassScope bool tSource = TypeSource{inPackageScope=inPackageScope tSource, inClassScope=bool}
 
-
-data Result l = Stuff (ImportDecl l) | RImportDecl (ImportDecl l)
+-- All possible result types that are ordered through their importance. Imports are less important then everything else.
+data Result l = 
+    RMemberDecl (MemberDecl l) -- RMemberDecl = Result MemberDecl
+    | RImportDecl (ImportDecl l)
     deriving (Show, Eq)
 
 instance Eq l => Ord (Result l) where
     compare a b = compare (toInt a) (toInt b)
         where
-            toInt Stuff{} = 1
+            toInt RMemberDecl{} = 1
             toInt RImportDecl{} = 2
 
-traverseAST :: TargetType -> CompilationUnit l -> [Result l]
-traverseAST target (CompilationUnit l pkgDcl importDecls tDcl) = parseResults ++ results
+traverseAST :: Target -> CompilationUnit l -> [Result l]
+traverseAST (Target tType tMethod) (CompilationUnit l pkgDcl importDecls tDcl) = parseResults ++ results
     where
         (tSource, results) = foldr checkImport (defaultTypeSource, []) importDecls
-        checkImport importDecl (typeSource, results) = if comp target importDecl
+        checkImport importDecl (typeSource, results) = if comp tType importDecl
             then (updateSource typeSource importDecl, RImportDecl importDecl:results)
             else (typeSource, results)
 
         updateSource tSource (ImportDecl _ True _) = updateClassScope True tSource
         updateSource tSource (ImportDecl _ False _) = updatePkgScope True tSource
 
-        isOriginalPackage = fromMaybe False (comp target <$> pkgDcl)
+        isOriginalPackage = fromMaybe False (comp tType <$> pkgDcl)
 
-        parseResults = tDcl >>= traverseTypeDecl isOriginalPackage (target, tSource)
+        parseResults = tDcl >>= traverseTypeDecl isOriginalPackage (Target tType tMethod, tSource)
 
 traverseTypeDecl :: Bool -> SearchBehavior -> TypeDecl l-> [Result l]
-traverseTypeDecl isOriginalPackage (target, typeSource) typeDecl = next
+traverseTypeDecl isOriginalPackage (Target tType tMethod, typeSource) typeDecl = next
     where
-        isOriginal = comp target typeDecl && isOriginalPackage
+        isOriginal = comp tType typeDecl && isOriginalPackage
         everyExtendImplement = delete (getType typeDecl) (collectTypes typeDecl)
-        doesExtendImplement = not $ null (map (comp target) everyExtendImplement)
-                            && inPackageScope typeSource
+        doesExtendImplement = not $ null (map (comp tType) everyExtendImplement) && inPackageScope typeSource
         updatedSearchBehavior = updateClassScope (isOriginal || doesExtendImplement) typeSource
-        next = traverseBody (target, updatedSearchBehavior) typeDecl
+        next = traverseBody (Target tType tMethod, updatedSearchBehavior) typeDecl
 
 traverseBody :: SearchBehavior -> TypeDecl l -> [Result l]
 traverseBody sb td = getBody td >>= traverseDecl sb
@@ -71,11 +74,31 @@ traverseDecl sb (MemberDecl _ decl) = traverseMemberDecl sb decl
 traverseDecl sb (InitDecl _ static block) = undefined
 
 traverseMemberDecl :: SearchBehavior -> MemberDecl l -> [Result l]
-traverseMemberDecl sb (FieldDecl _ _ t varDecls) = undefined
-traverseMemberDecl sb (MethodDecl _ _ _ t name params exT _ body) = undefined
-traverseMemberDecl sb (ConstructorDecl _ _ t _ _ _ _) = undefined
-traverseMemberDecl sb (MemberClassDecl _ _ ) = undefined
-traverseMemberDecl sb (MemberInterfaceDecl _ _ ) = undefined
+traverseMemberDecl (Target tType tMethod, _) (FieldDecl info mdm t varDecls) =
+    [RMemberDecl (FieldDecl info mdm t varDecls) | RelaxedType t == tType && isNothing tMethod]
+traverseMemberDecl (Target tType tMethod, TypeSource inPkgScp inClSkp) (MethodDecl info mdm mtp rt (Ident name) params e dia body) =
+    if inClSkp && isJust tMethod && name == fromJust tMethod
+    then [RMemberDecl (MethodDecl info mdm mtp rt (Ident name) params e dia body)] 
+    else traverseMethodBody (Target tType tMethod, TypeSource inPkgScp inClSkp) body
+traverseMemberDecl (Target tType tMethod, TypeSource inPkgScp inClSkp) (ConstructorDecl info mod tp (Ident name) fp e body) =
+    if inClSkp && isJust tMethod && name == fromJust tMethod
+    then [RMemberDecl (ConstructorDecl info mod tp (Ident name) fp e body)] 
+    else traverseConstructorBody (Target tType tMethod, TypeSource inPkgScp inClSkp) body
+traverseMemberDecl sb (MemberClassDecl info memClDecl) =
+
+traverseMemberDecl sb (MemberInterfaceDecl info memItDecl ) =
+   
+
+traverseConstructorBody :: SearchBehavior -> ConstructorBody l -> [Result l]
+traverseConstructorBody = undefined
+
+traverseMethodBody :: SearchBehavior -> MethodBody l -> [Result l]
+traverseMethodBody = undefined
+
+traverseClassDecl :: SearchBehavior -> ClassDecl l -> [Result l]
+
+traverseClassDecl :: SearchBehavior -> InterfaceDecl l -> [Result l]
+
 
 comp :: (HasType a) => RelaxedType -> a -> Bool
 comp rel = (rel ==) . RelaxedType . getType

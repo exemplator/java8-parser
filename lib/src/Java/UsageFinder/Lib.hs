@@ -1,11 +1,12 @@
 module Java.UsageFinder.Lib
     ( Command
-    , packageName
-    , className
-    , methodName
+    , packageNameCommand
+    , classNameCommand
+    , methodNameCommand
     ) where
 
 import           Language.Java.Position
+import           Language.Java.Syntax
 
 -- |
 -- provides a simple interface to use the Java parser
@@ -14,10 +15,16 @@ import           Language.Java.Position
 data Input = Input String Command
 
 data Command = Command {
-    packageName  :: Maybe String
-    , className  :: Maybe String
-    , methodName :: Maybe String
+    packageNameCommand  :: Maybe String
+    , classNameCommand  :: Maybe String
+    , methodNameCommand :: Maybe String
     } deriving (Show)
 
 getSelections :: Input -> Either String [Segment]
 getSelections input = undefined
+
+-- rValueFromFieldDecl :: MemberDecl l -> [String]
+-- rValueFromFieldDecl (FieldDecl _ _ _ varDeclList) = map rValueFromVarDecl varDeclList
+--     where 
+--         rValueFromVarDecl :: VarDecl l -> String
+--         rValueFromVarDecl (VarDecl _ (VarId _ (Ident val)) _) = val
