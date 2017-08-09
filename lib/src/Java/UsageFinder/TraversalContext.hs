@@ -69,6 +69,7 @@ getResults :: SearchContext l -> [Result l]
 getResults = undefined
 
 -- TODO handle correct package resolution!
+-- TODO handle Imports & TypeDecls (ClassScope, PackageScope)
 -- | handle case where we are handling classDecls and ImportStatements!
 handleType :: SearchContext l -> PossibleTypeMatch l -> SearchContext l
 handleType = undefined
