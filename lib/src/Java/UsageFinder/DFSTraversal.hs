@@ -6,22 +6,9 @@ import           Java.UsageFinder.Lib
 import           Language.Java.Position
 import           Language.Java.Syntax
 import           Language.Java.Helper
+import           Java.UsageFinder.TraversalContext
 
-type TargetType = RelaxedType
-type TargetMethod = String
-type ResultType = RelaxedType
-type ResultValue = String
 type DeclarationCheck l = ([ImportDecl l], Bool)
-
-data Target = Target
-    { targetType   :: TargetType
-    , targetMethod :: Maybe TargetMethod
-    }
-
-data TypeSource = TypeSource
-    { inPackageScope :: Bool    -- package is in scope, but class is not (i.e. NOT static imports)
-    , inClassScope   :: Bool    -- class is in scope (i.e. static imports or defined in this class)  
-    }
 
 type SearchBehavior = (Target, TypeSource)
 
@@ -29,18 +16,6 @@ defaultTypeSource = TypeSource{inPackageScope=False, inClassScope=False}
 
 updatePkgScope bool tSource = TypeSource{inPackageScope=bool, inClassScope=inClassScope tSource}
 updateClassScope bool tSource = TypeSource{inPackageScope=inPackageScope tSource, inClassScope=bool}
-
--- All possible result types that are ordered through their importance. Imports are less important then everything else.
-data Result l = 
-    RMemberDecl (MemberDecl l) -- RMemberDecl = Result MemberDecl
-    | RImportDecl (ImportDecl l)
-    deriving (Show, Eq)
-
-instance Eq l => Ord (Result l) where
-    compare a b = compare (toInt a) (toInt b)
-        where
-            toInt RMemberDecl{} = 1
-            toInt RImportDecl{} = 2
 
 traverseAST :: Target -> CompilationUnit l -> [Result l]
 traverseAST (Target tType tMethod) (CompilationUnit l pkgDcl importDecls tDcl) = parseResults ++ results
