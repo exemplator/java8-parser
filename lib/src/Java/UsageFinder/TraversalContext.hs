@@ -26,6 +26,8 @@ data TypeSource = TypeSource
 data Result l =
     RMemberDecl (MemberDecl l)
     | RTypeDecl (TypeDecl l)
+    | RExtends (Extends l)
+    | RImplements (Implements l)
     | RImportDecl (ImportDecl l)
     deriving (Show, Eq)
 
