@@ -25,6 +25,7 @@ data TypeSource = TypeSource
 --   Rxxxxx = Result xxxxx
 data Result l =
     RMemberDecl (MemberDecl l)
+    | RTypeDecl (TypeDecl l)
     | RImportDecl (ImportDecl l)
     deriving (Show, Eq)
 
@@ -32,7 +33,8 @@ instance Eq l => Ord (Result l) where
     compare a b = compare (toInt a) (toInt b)
         where
             toInt RMemberDecl{} = 1
-            toInt RImportDecl{} = 2
+            toInt RTypeDecl{} = 2
+            toInt RImportDecl{} = 3
 
 
 data SearchState = SearchState
