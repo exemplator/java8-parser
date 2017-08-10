@@ -38,10 +38,11 @@ instance Eq l => Ord (Result l) where
             toInt RTypeDecl{} = 2
             toInt RImportDecl{} = 3
 
-
+-- | Represents the state of stored data
+-- vars: The boolean says whether the variable has the same type as the one we are looking for, and the Ident is the name of the variable
 data SearchState = SearchState
     { thisPointer :: Ident
-    , vars        :: [Ident]
+    , vars        :: [(Bool, Ident)]
     }
 
 data SearchContext l = SearchContext
@@ -59,10 +60,13 @@ type MethodName = Ident
 --  Maybe Ident: If the AST Node has a name as well as a type, then the name of the node (ex. variable name)
 --- Example: Integer x       -> Type: Integer   , Name: x 
 --- Class extends SuperClass -> Type: SuperClass, Name: Nothing
-type PossibleTypeMatch l = (Type, Maybe Ident, Maybe (Result l))
+type PossibleTypeMatch l = (Type, Maybe Ident, Result l)
 
 -- | Data Structure to track any encountered method 
 type PossibleMethodMatch l = (MethodType, MethodName, Result l)
+
+type IsSameType = Bool
+type IsShadowing = Bool
 
 setInPackageScope :: Bool -> SearchContext l -> SearchContext l
 setInPackageScope = undefined
@@ -78,19 +82,38 @@ mergeUpstream = undefined
 getResults :: SearchContext l -> [Result l]
 getResults = undefined
 
+setPckDecl :: SearchContext l -> PackageDecl l -> SearchContext l
+setPckDecl = undefined
+
+appImportStatement :: SearchContext l -> ImportDecl l -> SearchContext l
+appImportStatement = undefined
+
 -- TODO handle correct package resolution!
 -- TODO handle Imports & TypeDecls (ClassScope, PackageScope)
 -- | handle case where we are handling classDecls and ImportStatements!
+-- Add variable if:
+--   1. Types are the same
+--   2. Variable shadows another variable (irrelevant of types)
 handleType :: SearchContext l -> PossibleTypeMatch l -> SearchContext l
-handleType ctx (t, ident, pRes) = 
-    if (targetType . target) ctx == RelaxedType t
-    then addTypeToState (t, ident, pRes) (maybe False shadow ident) ctx
+handleType ctx (t, ident, pRes) =
+    if isSameType || isShadowed
+    then addTypeToState (t, ident, pRes) isSameType isShadowed ctx
+    else undefined
+    where
+        isSameType = typeEquals ctx (t, ident, pRes)
+        isShadowed = maybe False (shadow ident ctx) ident
 
 handleMethod :: SearchContext l -> PossibleMethodMatch l -> SearchContext l
 handleMethod = undefined
 
-addTypeToState :: PossibleTypeMatch l -> Bool -> SearchContext l -> SearchContext l
-addTypeToState (t, ident, pRes) ctx = (state ctx
+-- | Checks if type is equal to target type
+typeEquals :: SearchContext l -> PossibleTypeMatch l -> Bool
+typeEquals ctx (t, ident, pRes) = (targetType . target) ctx == RelaxedType t
+-- 
+-- Only add new layer when shadowing (Bool = true)
+addTypeToState :: PossibleTypeMatch l -> IsSameType -> IsShadowing -> SearchContext l -> SearchContext l
+addTypeToState (t, ident, pRes) iSt iSd ctx = undefined
 
+-- | Checks if ident is shadowing some variable we already stored 
 shadow :: Ident -> SearchContext l -> Bool
-shadow = undefined
+shadow ident ctx = foldr (\s b1 -> b1 || elem ident (map snd $ vars s)) False $ state ctx
