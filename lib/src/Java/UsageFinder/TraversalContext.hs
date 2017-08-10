@@ -46,10 +46,12 @@ data SearchState = SearchState
     }
 
 data SearchContext l = SearchContext
-    { target     :: Target
-    , typeSource :: TypeSource
-    , state      :: [SearchState]
-    , result     :: [Result l]
+    { target      :: Target
+    , typeSource  :: TypeSource
+    , state       :: [SearchState]
+    , imports     :: [ImportDecl l]
+    , thisPointer :: Ident
+    , result      :: [Result l]
     }
 
 data MethodType = MVar Ident | MThis (Maybe Ident) | MType Type
@@ -66,7 +68,7 @@ type PossibleTypeMatch l = (Type, Maybe Ident, Result l)
 type PossibleMethodMatch l = (MethodType, MethodName, Result l)
 
 type IsSameType = Bool
-type IsShadowing = Bool
+type IsNewScope = Bool
 
 setInPackageScope :: Bool -> SearchContext l -> SearchContext l
 setInPackageScope = undefined
@@ -85,8 +87,12 @@ getResults = undefined
 setPckDecl :: SearchContext l -> PackageDecl l -> SearchContext l
 setPckDecl = undefined
 
-appImportStatement :: SearchContext l -> ImportDecl l -> SearchContext l
-appImportStatement = undefined
+addImportStatement :: SearchContext l -> ImportDecl l -> SearchContext l
+addImportStatement = undefined
+
+-- | When we encounter a new class (inner class etc.) we create a new this pointer and then create a new search state for that scope 
+setThisPointer :: Ident -> SearchContext l -> SearchContext l
+setThisPointer ident ctx = SearchContext {thisPointer = ident, state = SearchState ident [] : state ctx}
 
 -- TODO handle correct package resolution!
 -- TODO handle Imports & TypeDecls (ClassScope, PackageScope)
@@ -109,10 +115,12 @@ handleMethod = undefined
 -- | Checks if type is equal to target type
 typeEquals :: SearchContext l -> PossibleTypeMatch l -> Bool
 typeEquals ctx (t, ident, pRes) = (targetType . target) ctx == RelaxedType t
--- 
--- Only add new layer when shadowing (Bool = true)
-addTypeToState :: PossibleTypeMatch l -> IsSameType -> IsShadowing -> SearchContext l -> SearchContext l
-addTypeToState (t, ident, pRes) iSt iSd ctx = undefined
+
+-- TODO: handle thisPointer 
+-- | Add type to the search context
+addTypeToState :: PossibleTypeMatch l -> IsSameType -> IsNewScope -> SearchContext l -> SearchContext l
+addTypeToState (t, ident, pRes) ist ins ctx = if ins then (ist, ident) : (vars . head . state) ctx
+    else SearchState (thisPointer ctx) [(iSt, ident)] : state ctx
 
 -- | Checks if ident is shadowing some variable we already stored 
 shadow :: Ident -> SearchContext l -> Bool
