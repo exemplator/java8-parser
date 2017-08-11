@@ -17,6 +17,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Java.UsageFinder.UsageFinder,
                        Java.UsageFinder.DFSTraversal,
+                       Java.UsageFinder.TraverssalContext,
                        Java.UsageFinder.Lib
                       
   build-depends:       base >= 4.7 && < 5,

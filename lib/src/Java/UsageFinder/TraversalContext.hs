@@ -17,8 +17,8 @@ data Target = Target
     }
 
 data TypeSource = TypeSource
-    { inPackageScope :: Bool    -- package is in scope, but class is not (i.e. NOT static imports)
-    , inClassScope   :: Bool    -- class is in scope (i.e. static imports or defined in this class)
+    { inPackageScope :: Bool    -- package is in scope, but class is not (i.e. NOT static ctxImports)
+    , inClassScope   :: Bool    -- class is in scope (i.e. static ctxImports or defined in this class)
     }
 
 -- | All possible result types that are ordered through their importance. Imports are less important then everything else.
@@ -49,8 +49,8 @@ data SearchContext l = SearchContext
     { target      :: Target
     , typeSource  :: TypeSource
     , state       :: [SearchState]
-    , imports     :: [ImportDecl l]
-    , thisPointer :: Ident
+    , ctxImports  :: [ImportDecl l]
+    , currThisP   :: Ident
     , result      :: [Result l]
     }
 
@@ -88,11 +88,11 @@ setPckDecl :: SearchContext l -> PackageDecl l -> SearchContext l
 setPckDecl = undefined
 
 addImportStatement :: SearchContext l -> ImportDecl l -> SearchContext l
-addImportStatement = undefined
+addImportStatement ctx iDecl = SearchContext{ctxImports = iDecl : ctxImports ctx} 
 
 -- | When we encounter a new class (inner class etc.) we create a new this pointer and then create a new search state for that scope 
 setThisPointer :: Ident -> SearchContext l -> SearchContext l
-setThisPointer ident ctx = SearchContext {thisPointer = ident, state = SearchState ident [] : state ctx}
+setThisPointer ident ctx = SearchContext {currThisP = ident, state = SearchState ident [] : state ctx}
 
 -- TODO handle correct package resolution!
 -- TODO handle Imports & TypeDecls (ClassScope, PackageScope)
@@ -120,7 +120,7 @@ typeEquals ctx (t, ident, pRes) = (targetType . target) ctx == RelaxedType t
 -- | Add type to the search context
 addTypeToState :: PossibleTypeMatch l -> IsSameType -> IsNewScope -> SearchContext l -> SearchContext l
 addTypeToState (t, ident, pRes) ist ins ctx = if ins then (ist, ident) : (vars . head . state) ctx
-    else SearchState (thisPointer ctx) [(iSt, ident)] : state ctx
+    else SearchState (currThisP ctx) [(iSt, ident)] : state ctx
 
 -- | Checks if ident is shadowing some variable we already stored 
 shadow :: Ident -> SearchContext l -> Bool
