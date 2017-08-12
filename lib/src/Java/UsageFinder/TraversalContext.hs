@@ -88,11 +88,11 @@ setPckDecl :: SearchContext l -> PackageDecl l -> SearchContext l
 setPckDecl = undefined
 
 addImportStatement :: SearchContext l -> ImportDecl l -> SearchContext l
-addImportStatement ctx iDecl = SearchContext{ctxImports = iDecl : ctxImports ctx} 
+addImportStatement ctx iDecl = ctx {ctxImports = iDecl : ctxImports ctx} 
 
 -- | When we encounter a new class (inner class etc.) we create a new this pointer and then create a new search state for that scope 
 setThisPointer :: Ident -> SearchContext l -> SearchContext l
-setThisPointer ident ctx = SearchContext {currThisP = ident, state = SearchState ident [] : state ctx}
+setThisPointer ident ctx = ctx {currThisP = ident, state = SearchState ident [] : state ctx}
 
 -- TODO handle correct package resolution!
 -- TODO handle Imports & TypeDecls (ClassScope, PackageScope)
@@ -107,21 +107,38 @@ handleType ctx (t, ident, pRes) =
     else undefined
     where
         isSameType = typeEquals ctx (t, ident, pRes)
-        isShadowed = maybe False (shadow ident ctx) ident
+        isShadowed = maybe False (shadow ctx) ident
 
 handleMethod :: SearchContext l -> PossibleMethodMatch l -> SearchContext l
 handleMethod = undefined
 
 -- | Checks if type is equal to target type
 typeEquals :: SearchContext l -> PossibleTypeMatch l -> Bool
-typeEquals ctx (t, ident, pRes) = (targetType . target) ctx == RelaxedType t
+typeEquals ctx (t, _, _) = (targetType . target) ctx == RelaxedType t
 
 -- TODO: handle thisPointer 
 -- | Add type to the search context
 addTypeToState :: PossibleTypeMatch l -> IsSameType -> IsNewScope -> SearchContext l -> SearchContext l
-addTypeToState (t, ident, pRes) ist ins ctx = if ins then (ist, ident) : (vars . head . state) ctx
-    else SearchState (currThisP ctx) [(iSt, ident)] : state ctx
+addTypeToState (_, Just ident, _) ist ins ctx = 
+    -- | If in new scope
+    if ins 
+    -- | then create a new search state representing the scope and add it to the list of existing search states
+    then ctx {state = SearchState (currThisP ctx) [(ist, ident)] : state ctx}
+    -- | if not in new scope, add to existing state for the scope
+    else ctx {state = headState {vars = (ist, ident) : vars headState} : (deleteFirst . state) ctx}
+    where
+        headState = (head . state) ctx
+
+        deleteFirst :: [a] -> [a]
+        deleteFirst [] = [] 
+        deleteFirst (b:bc)= bc 
+
+-- | Check if types match. If so, add AST block to results
+checkTypeMatch :: PossibleTypeMatch l -> SearchContext l -> SearchContext l
+checkTypeMatch (t, _, res) ctx = if RelaxedType t == (targetType . target) ctx 
+    then ctx {result = res : result ctx}
+    else ctx
 
 -- | Checks if ident is shadowing some variable we already stored 
-shadow :: Ident -> SearchContext l -> Bool
-shadow ident ctx = foldr (\s b1 -> b1 || elem ident (map snd $ vars s)) False $ state ctx
+shadow :: SearchContext l -> Ident -> Bool
+shadow ctx ident = foldr (\s b1 -> b1 || elem ident (map snd $ vars s)) False $ state ctx
