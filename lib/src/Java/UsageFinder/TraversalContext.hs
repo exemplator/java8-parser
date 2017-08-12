@@ -49,6 +49,7 @@ data SearchContext l = SearchContext
     { target      :: Target
     , typeSource  :: TypeSource
     , state       :: [SearchState]
+    , package     :: PackageDecl l
     , ctxImports  :: [ImportDecl l]
     , currThisP   :: Ident
     , result      :: [Result l]
@@ -82,10 +83,10 @@ mergeUpstream :: SearchContext l -> SearchContext l -> SearchContext l
 mergeUpstream = undefined
 
 getResults :: SearchContext l -> [Result l]
-getResults = undefined
+getResults = result
 
 setPckDecl :: SearchContext l -> PackageDecl l -> SearchContext l
-setPckDecl = undefined
+setPckDecl ctx pkgDecl = ctx {package = pkgDecl}
 
 addImportStatement :: SearchContext l -> ImportDecl l -> SearchContext l
 addImportStatement ctx iDecl = ctx {ctxImports = iDecl : ctxImports ctx} 
@@ -103,18 +104,18 @@ setThisPointer ident ctx = ctx {currThisP = ident, state = SearchState ident [] 
 handleType :: SearchContext l -> PossibleTypeMatch l -> SearchContext l
 handleType ctx (t, ident, pRes) =
     if isSameType || isShadowed
-    then addTypeToState (t, ident, pRes) isSameType isShadowed ctx
-    else undefined
+    then checkTypeMatch (t, ident, pRes) (addTypeToState (t, ident, pRes) isSameType isShadowed ctx)
+    else ctx
     where
-        isSameType = typeEquals ctx (t, ident, pRes)
+        isSameType = typeEquals ctx t
         isShadowed = maybe False (shadow ctx) ident
 
 handleMethod :: SearchContext l -> PossibleMethodMatch l -> SearchContext l
 handleMethod = undefined
 
 -- | Checks if type is equal to target type
-typeEquals :: SearchContext l -> PossibleTypeMatch l -> Bool
-typeEquals ctx (t, _, _) = (targetType . target) ctx == RelaxedType t
+typeEquals :: SearchContext l -> Type -> Bool
+typeEquals ctx t = (targetType . target) ctx == RelaxedType t
 
 -- TODO: handle thisPointer 
 -- | Add type to the search context
@@ -135,7 +136,7 @@ addTypeToState (_, Just ident, _) ist ins ctx =
 
 -- | Check if types match. If so, add AST block to results
 checkTypeMatch :: PossibleTypeMatch l -> SearchContext l -> SearchContext l
-checkTypeMatch (t, _, res) ctx = if RelaxedType t == (targetType . target) ctx 
+checkTypeMatch (t, _, res) ctx = if typeEquals ctx t 
     then ctx {result = res : result ctx}
     else ctx
 
